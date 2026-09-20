@@ -36,7 +36,7 @@ class TrackPanel extends JPanel {
 
 class ProgressGauge extends JPanel {
     private int currentScore = 0;
-    private final int maxScore = 600;
+    private final int maxScore = 100000;
 
     // Constructor
     public ProgressGauge() {
@@ -248,7 +248,8 @@ public class CarGUI {
         finishLineX = trackLabel.getX() + (trackLabel.getWidth() - 670) / 2;
         initFinishLine();
 
-        policeCar = new PoliceCar("POLICE_CAR.png", 14, this);
+        // Reduced police car speed to 8
+        policeCar = new PoliceCar("POLICE_CAR.png", 8, this);
         layeredPane.add(policeCar, Integer.valueOf(3));
 
         initObstaclePool();
@@ -371,7 +372,7 @@ public class CarGUI {
             }
 
             if (tickCount % 6 == 0) {
-                addScore(1);
+                addScore(54);
             }
 
             if (tickCount % 75 == 0 && !readyForFinishLine && !finishLineSpawned) {
@@ -540,22 +541,22 @@ public class CarGUI {
         return true;
     }
 
-    // Increments game score and updates gauge
+    // Increments game score up to 100000 and triggers police spawn every 10000 pts
     public void addScore(int points) {
         if (isGameOver || isWin) return;
 
         int oldScore = score;
-        score = Math.min(score + points, 600);
+        score = Math.min(score + points, 100000);
         scoreLabel.setText("SCORE: " + score);
         progressGauge.setScore(score);
 
-        if (score > 0 && (score / 100) > (oldScore / 100)) {
+        if (score > 0 && (score / 10000) > (oldScore / 10000)) {
             if (!policeCar.isActive()) {
                 policeReadyToSpawn = true;
             }
         }
 
-        if (score >= 600 && !readyForFinishLine && !finishLineSpawned) {
+        if (score >= 100000 && !readyForFinishLine && !finishLineSpawned) {
             readyForFinishLine = true;
         }
     }

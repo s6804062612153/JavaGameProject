@@ -38,7 +38,7 @@ public class Coin extends JPanel {
         setLocation(-500, -500);
     }
 
-    // Updates coin position
+    // Updates coin position and gives 5000 points on collection
     public void updatePosition() {
         if (!active || gui.isGameOver()) return;
 
@@ -49,7 +49,7 @@ public class Coin extends JPanel {
         Rectangle coinBounds = getBounds();
 
         if (playerBounds.intersects(coinBounds)) {
-            gui.addScore(50);
+            gui.addScore(5000);
             reset();
             return;
         }
