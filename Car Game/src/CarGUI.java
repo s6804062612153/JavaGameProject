@@ -275,20 +275,21 @@ public class CarGUI {
 
     // Plays background music on continuous loop
     private void playBGM(String fileName) {
-        try {
-            stopBGM();
-            File soundFile = new File("asset/" + fileName);
-            if (soundFile.exists()) {
-                AudioInputStream audioIn = AudioSystem.getAudioInputStream(soundFile);
+    try {
+        stopBGM();
+        File soundFile = new File("asset/" + fileName);
+        if (soundFile.exists()) {
+            try (AudioInputStream audioIn = AudioSystem.getAudioInputStream(soundFile)) {
                 bgmClip = AudioSystem.getClip();
                 bgmClip.open(audioIn);
                 bgmClip.loop(Clip.LOOP_CONTINUOUSLY);
                 bgmClip.start();
             }
-        } catch (Exception e) {
-            e.printStackTrace();
         }
+    } catch (Exception e) {
+        e.printStackTrace();
     }
+}
 
     // Stops background music
     private void stopBGM() {

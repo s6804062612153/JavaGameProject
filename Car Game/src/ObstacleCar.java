@@ -1,44 +1,14 @@
-import javax.swing.*;
 import java.awt.*;
 
-public class ObstacleCar extends JPanel {
-    private final int speed;
-    private boolean active = false;
-    private final CarGUI gui;
+public class ObstacleCar extends GameObject {
 
     // Constructor
     public ObstacleCar(String fileName, int speed, CarGUI gui) {
-        this.speed = speed;
-        this.gui = gui;
-
-        setLayout(new BorderLayout());
-        setSize(110, 220);
-        setOpaque(false);
-        setDoubleBuffered(true);
-
-        Image scaledImage = new ImageIcon("asset/" + fileName).getImage().getScaledInstance(110, 220, Image.SCALE_SMOOTH);
-        JLabel carLabel = new JLabel(new ImageIcon(scaledImage));
-        carLabel.setOpaque(false);
-        add(carLabel, BorderLayout.CENTER);
-
-        reset();
-    }
-
-    // Spawns obstacle car
-    public void spawn(int startX, int startY) {
-        setLocation(startX, startY);
-        active = true;
-        setVisible(true);
-    }
-
-    // Resets obstacle car
-    public void reset() {
-        active = false;
-        setVisible(false);
-        setLocation(-500, -500);
+        super(fileName, 110, 220, speed, gui);
     }
 
     // Updates position
+    @Override
     public void updatePosition() {
         if (!active || gui.isGameOver()) return;
 
@@ -59,10 +29,5 @@ public class ObstacleCar extends JPanel {
         if (nextY > 1080) {
             reset();
         }
-    }
-
-    // Returns active status
-    public boolean isActive() {
-        return active;
     }
 }

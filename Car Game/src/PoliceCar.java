@@ -1,44 +1,19 @@
-import javax.swing.*;
 import java.awt.*;
 
-public class PoliceCar extends JPanel {
-    private final int speed;
-    private boolean active = false;
-    private final CarGUI gui;
+public class PoliceCar extends GameObject {
 
     // Constructor
     public PoliceCar(String fileName, int speed, CarGUI gui) {
-        this.speed = speed;
-        this.gui = gui;
-
-        setLayout(new BorderLayout());
-        setSize(110, 220);
-        setOpaque(false);
-        setDoubleBuffered(true);
-
-        Image scaledImage = new ImageIcon("asset/" + fileName).getImage().getScaledInstance(110, 220, Image.SCALE_SMOOTH);
-        JLabel carLabel = new JLabel(new ImageIcon(scaledImage));
-        carLabel.setOpaque(false);
-        add(carLabel, BorderLayout.CENTER);
-
-        reset();
+        super(fileName, 110, 220, speed, gui);
     }
 
-    // Spawns police car
+    // Spawns police car at bottom
     public void spawn(int startX) {
-        setLocation(startX, 1080);
-        active = true;
-        setVisible(true);
-    }
-
-    // Resets police car
-    public void reset() {
-        active = false;
-        setVisible(false);
-        setLocation(-500, -500);
+        super.spawn(startX, 1080);
     }
 
     // Updates position
+    @Override
     public void updatePosition() {
         if (!active || gui.isGameOver()) return;
 
@@ -59,10 +34,5 @@ public class PoliceCar extends JPanel {
         if (nextY < -220) {
             reset();
         }
-    }
-
-    // Returns active status
-    public boolean isActive() {
-        return active;
     }
 }

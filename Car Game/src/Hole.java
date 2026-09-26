@@ -1,44 +1,14 @@
-import javax.swing.*;
 import java.awt.*;
 
-public class Hole extends JPanel {
-    private final int speed;
-    private boolean active = false;
-    private final CarGUI gui;
+public class Hole extends GameObject {
 
     // Constructor
     public Hole(String fileName, int speed, CarGUI gui) {
-        this.speed = speed;
-        this.gui = gui;
-
-        setLayout(new BorderLayout());
-        setSize(110, 110);
-        setOpaque(false);
-        setDoubleBuffered(true);
-
-        Image img = new ImageIcon("asset/" + fileName).getImage().getScaledInstance(110, 110, Image.SCALE_SMOOTH);
-        JLabel holeLabel = new JLabel(new ImageIcon(img));
-        holeLabel.setOpaque(false);
-        add(holeLabel, BorderLayout.CENTER);
-
-        reset();
-    }
-
-    // Spawns hole
-    public void spawn(int startX, int startY) {
-        setLocation(startX, startY);
-        active = true;
-        setVisible(true);
-    }
-
-    // Resets hole state
-    public void reset() {
-        active = false;
-        setVisible(false);
-        setLocation(-500, -500);
+        super(fileName, 110, 110, speed, gui);
     }
 
     // Updates position
+    @Override
     public void updatePosition() {
         if (!active || gui.isGameOver()) return;
 
@@ -59,10 +29,5 @@ public class Hole extends JPanel {
         if (nextY > 1080) {
             reset();
         }
-    }
-
-    // Returns active status
-    public boolean isActive() {
-        return active;
     }
 }

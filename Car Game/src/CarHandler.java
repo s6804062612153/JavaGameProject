@@ -10,15 +10,22 @@ public class CarHandler {
         this.C = ref;
     }
 
-    // Installs WASD key bindings
+    // Installs WASD and Arrow key bindings
     public void installKeyBindings(JComponent component) {
         InputMap inputMap = component.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);
         ActionMap actionMap = component.getActionMap();
 
+        // WASD Key Bindings
         bind(inputMap, actionMap, "pressed A", KeyEvent.VK_A, "moveLeft");
         bind(inputMap, actionMap, "pressed D", KeyEvent.VK_D, "moveRight");
         bind(inputMap, actionMap, "pressed W", KeyEvent.VK_W, "moveUp");
         bind(inputMap, actionMap, "pressed S", KeyEvent.VK_S, "moveDown");
+
+        // Arrow Key Bindings
+        bind(inputMap, actionMap, "pressed LEFT", KeyEvent.VK_LEFT, "moveLeft");
+        bind(inputMap, actionMap, "pressed RIGHT", KeyEvent.VK_RIGHT, "moveRight");
+        bind(inputMap, actionMap, "pressed UP", KeyEvent.VK_UP, "moveUp");
+        bind(inputMap, actionMap, "pressed DOWN", KeyEvent.VK_DOWN, "moveDown");
     }
 
     // Binds key action
@@ -52,13 +59,13 @@ public class CarHandler {
         int nextTargetX = C.getTargetX();
         int nextTargetY = C.getTargetY();
 
-        if (key == KeyEvent.VK_A) {
+        if (key == KeyEvent.VK_A || key == KeyEvent.VK_LEFT) {
             nextTargetX = Math.max(minLeftX, nextTargetX - 138);
-        } else if (key == KeyEvent.VK_D) {
+        } else if (key == KeyEvent.VK_D || key == KeyEvent.VK_RIGHT) {
             nextTargetX = Math.min(maxRightX, nextTargetX + 138);
-        } else if (key == KeyEvent.VK_W) {
+        } else if (key == KeyEvent.VK_W || key == KeyEvent.VK_UP) {
             nextTargetY = Math.max(minY, nextTargetY - 138);
-        } else if (key == KeyEvent.VK_S) {
+        } else if (key == KeyEvent.VK_S || key == KeyEvent.VK_DOWN) {
             nextTargetY = Math.min(maxY, nextTargetY + 138);
         }
 
