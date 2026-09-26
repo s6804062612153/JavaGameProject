@@ -1,3 +1,6 @@
+import javax.sound.sampled.AudioInputStream;
+import javax.sound.sampled.AudioSystem;
+import javax.sound.sampled.Clip;
 import javax.swing.*;
 import java.awt.*;
 import java.io.File;
@@ -149,6 +152,7 @@ public class CarGUI {
     private Random random = new Random();
 
     private int selectedLevel = 1;
+    private Clip bgmClip;
 
     // Constructor for CarGUI
     public CarGUI() {
@@ -248,7 +252,6 @@ public class CarGUI {
         finishLineX = trackLabel.getX() + (trackLabel.getWidth() - 670) / 2;
         initFinishLine();
 
-        // Reduced police car speed to 8
         policeCar = new PoliceCar("POLICE_CAR.png", 8, this);
         layeredPane.add(policeCar, Integer.valueOf(3));
 
@@ -258,6 +261,8 @@ public class CarGUI {
             initHolePool();
         }
 
+        playBGM("bgm.wav");
+
         initMasterGameLoop();
 
         hnd.installKeyBindings(layeredPane);
@@ -266,6 +271,34 @@ public class CarGUI {
         fr.repaint();
         fr.setVisible(true);
         SwingUtilities.invokeLater(() -> layeredPane.requestFocusInWindow());
+    }
+
+    // Plays background music on continuous loop
+    private void playBGM(String fileName) {
+        try {
+            stopBGM();
+            File soundFile = new File("asset/" + fileName);
+            if (soundFile.exists()) {
+                AudioInputStream audioIn = AudioSystem.getAudioInputStream(soundFile);
+                bgmClip = AudioSystem.getClip();
+                bgmClip.open(audioIn);
+                bgmClip.loop(Clip.LOOP_CONTINUOUSLY);
+                bgmClip.start();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    // Stops background music
+    private void stopBGM() {
+        if (bgmClip != null) {
+            if (bgmClip.isRunning()) {
+                bgmClip.stop();
+            }
+            bgmClip.close();
+            bgmClip = null;
+        }
     }
 
     // Initializes hole pool
@@ -678,6 +711,7 @@ public class CarGUI {
         isWin = true;
 
         if (gameLoopTimer != null) gameLoopTimer.stop();
+        stopBGM();
 
         ImageIcon winIcon = loadScaledIcon("Win.png", 825, 289, Image.SCALE_SMOOTH);
         winLabel = new JLabel(winIcon);
@@ -693,7 +727,10 @@ public class CarGUI {
         restartBtn.setFocusPainted(false);
         restartBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
 
-        restartBtn.addActionListener(e -> new TitleGUI(fr));
+        restartBtn.addActionListener(e -> {
+            stopBGM();
+            new TitleGUI(fr);
+        });
 
         layeredPane.add(restartBtn, Integer.valueOf(5));
         layeredPane.revalidate();
@@ -706,6 +743,7 @@ public class CarGUI {
         isGameOver = true;
 
         if (gameLoopTimer != null) gameLoopTimer.stop();
+        stopBGM();
 
         ImageIcon smokeIcon = new ImageIcon("asset/EXPLOSION.gif");
         smokeLabel = new JLabel(smokeIcon);
@@ -783,6 +821,7 @@ public class CarGUI {
         isWin = false;
         policeReadyToSpawn = false;
 
+        playBGM("bgm.wav");
         gameLoopTimer.start();
 
         layeredPane.revalidate();
