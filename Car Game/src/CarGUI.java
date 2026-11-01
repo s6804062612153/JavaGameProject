@@ -3,7 +3,8 @@ import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.Clip;
 import javax.swing.*;
 import java.awt.*;
-import java.io.File;
+import java.io.InputStream;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -13,20 +14,17 @@ class TrackPanel extends JPanel {
     private int trackY = 0;
     private final int scrollSpeed = 10;
 
-    // Constructor
     public TrackPanel(Image image) {
         this.trackImage = image;
         setOpaque(false);
         setDoubleBuffered(true);
     }
 
-    // Scrolls background image
     public void updateScroll() {
         trackY = (trackY + scrollSpeed) % 1080;
         repaint();
     }
 
-    // Draws scrolling track
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
@@ -41,20 +39,17 @@ class ProgressGauge extends JPanel {
     private int currentScore = 0;
     private final int maxScore = 100000;
 
-    // Constructor
     public ProgressGauge() {
         setOpaque(false);
         setDoubleBuffered(true);
         setSize(400, 60);
     }
 
-    // Sets gauge score value and repaints
     public void setScore(int score) {
         this.currentScore = Math.min(Math.max(score, 0), maxScore);
         repaint();
     }
 
-    // Draws progress bar
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
@@ -62,7 +57,6 @@ class ProgressGauge extends JPanel {
         try {
             g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
                     RenderingHints.VALUE_ANTIALIAS_ON);
-
             int barX = 20;
             int barY = 20;
             int barWidth = 320;
@@ -114,23 +108,18 @@ public class CarGUI {
     TrackPanel trackLabel;
     JLayeredPane layeredPane;
     int speed;
-
     private Timer gameLoopTimer;
     private long tickCount = 0;
-
     private int targetX;
     private int targetY;
-
     private boolean isGameOver = false;
     private boolean isWin = false;
     private boolean policeReadyToSpawn = false;
     private boolean readyForFinishLine = false;
     private boolean finishLineSpawned = false;
-
     private int score = 0;
     private JLabel scoreLabel;
     private ProgressGauge progressGauge;
-
     private JLabel finishLineLabel;
     private int finishLineY = -171;
     private int finishLineX;
@@ -138,10 +127,8 @@ public class CarGUI {
     private final List<ObstacleCar> obstaclePool = new ArrayList<>();
     private static final int POOL_SIZE = 6;
     private PoliceCar policeCar;
-
     private final List<Coin> coinPool = new ArrayList<>();
     private static final int COIN_POOL_SIZE = 4;
-
     private final List<Hole> holePool = new ArrayList<>();
     private static final int HOLE_POOL_SIZE = 3;
 
@@ -150,39 +137,33 @@ public class CarGUI {
     private JLabel winLabel;
     private JButton restartBtn;
     private Random random = new Random();
-
     private int selectedLevel = 1;
     private Clip bgmClip;
 
-    // Constructor for CarGUI
     public CarGUI() {
         this(null, 1);
     }
 
-    // Constructor for CarGUI
     public CarGUI(JFrame existingFrame) {
         this(existingFrame, 1);
     }
 
-    // Constructor for CarGUI
     public CarGUI(JFrame existingFrame, int level) {
         this.selectedLevel = level;
         if (existingFrame != null) {
             this.fr = existingFrame;
             this.fr.setTitle("Race to Parksoi - Level " + level);
         }
-        
+
         if (selectedLevel == 2) {
             speed = MOVE_STEP + 3;
         } else {
             speed = MOVE_STEP;
         }
-
         hnd = new CarHandler(this);
         initGUI();
     }
 
-    // Initializes gameplay UI
     private void initGUI() {
         if (fr == null) {
             fr = new JFrame("Race to Parksoi");
@@ -205,7 +186,8 @@ public class CarGUI {
         background.setBounds(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
         layeredPane.add(background, Integer.valueOf(1));
 
-        Image trackImg = new ImageIcon("asset/TRACK.jpg").getImage();
+        URL trackURL = getClass().getResource("/asset/TRACK.jpg");
+        Image trackImg = (trackURL != null) ? new ImageIcon(trackURL).getImage() : null;
         trackLabel = new TrackPanel(trackImg);
         trackLabel.setBounds(560, 0, 800, 1080);
         layeredPane.add(trackLabel, Integer.valueOf(2));
@@ -225,7 +207,6 @@ public class CarGUI {
         carPanel.setLocation(startX, startY);
         targetX = startX;
         targetY = startY;
-
         layeredPane.add(carPanel, Integer.valueOf(3));
 
         progressGauge = new ProgressGauge();
@@ -233,12 +214,14 @@ public class CarGUI {
         layeredPane.add(progressGauge, Integer.valueOf(5));
 
         Font customFont;
-        try {
-            File fontFile = new File("asset/SedgwickAveDisplay-Regular.ttf");
-            customFont = Font.createFont(Font.TRUETYPE_FONT, fontFile)
-                    .deriveFont(Font.BOLD, 48f);
-            GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
-            ge.registerFont(customFont);
+        try (InputStream fontStream = getClass().getResourceAsStream("/asset/SedgwickAveDisplay-Regular.ttf")) {
+            if (fontStream != null) {
+                customFont = Font.createFont(Font.TRUETYPE_FONT, fontStream).deriveFont(Font.BOLD, 48f);
+                GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
+                ge.registerFont(customFont);
+            } else {
+                customFont = new Font("Serif", Font.BOLD, 48);
+            }
         } catch (Exception e) {
             customFont = new Font("Serif", Font.BOLD, 48);
         }
@@ -262,36 +245,33 @@ public class CarGUI {
         }
 
         playBGM("bgm.wav");
-
         initMasterGameLoop();
-
         hnd.installKeyBindings(layeredPane);
 
         fr.revalidate();
         fr.repaint();
         fr.setVisible(true);
+
         SwingUtilities.invokeLater(() -> layeredPane.requestFocusInWindow());
     }
 
-    // Plays background music on continuous loop
     private void playBGM(String fileName) {
-    try {
-        stopBGM();
-        File soundFile = new File("asset/" + fileName);
-        if (soundFile.exists()) {
-            try (AudioInputStream audioIn = AudioSystem.getAudioInputStream(soundFile)) {
-                bgmClip = AudioSystem.getClip();
-                bgmClip.open(audioIn);
-                bgmClip.loop(Clip.LOOP_CONTINUOUSLY);
-                bgmClip.start();
+        try {
+            stopBGM();
+            URL audioURL = getClass().getResource("/asset/" + fileName);
+            if (audioURL != null) {
+                try (AudioInputStream audioIn = AudioSystem.getAudioInputStream(audioURL)) {
+                    bgmClip = AudioSystem.getClip();
+                    bgmClip.open(audioIn);
+                    bgmClip.loop(Clip.LOOP_CONTINUOUSLY);
+                    bgmClip.start();
+                }
             }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
-    } catch (Exception e) {
-        e.printStackTrace();
     }
-}
 
-    // Stops background music
     private void stopBGM() {
         if (bgmClip != null) {
             if (bgmClip.isRunning()) {
@@ -302,7 +282,6 @@ public class CarGUI {
         }
     }
 
-    // Initializes hole pool
     private void initHolePool() {
         for (int i = 0; i < HOLE_POOL_SIZE; i++) {
             Hole hole = new Hole("HOLE.png", 10, this);
@@ -311,7 +290,6 @@ public class CarGUI {
         }
     }
 
-    // Retrieves inactive hole
     private Hole getAvailableHole() {
         for (Hole h : holePool) {
             if (!h.isActive()) return h;
@@ -319,14 +297,16 @@ public class CarGUI {
         return null;
     }
 
-    // Loads image icon from asset directory
     private ImageIcon loadScaledIcon(String fileName, int width, int height, int hints) {
-        ImageIcon icon = new ImageIcon("asset/" + fileName);
-        Image image = icon.getImage().getScaledInstance(width, height, hints);
-        return new ImageIcon(image);
+        URL imgURL = getClass().getResource("/asset/" + fileName);
+        if (imgURL != null) {
+            Image image = new ImageIcon(imgURL).getImage().getScaledInstance(width, height, hints);
+            return new ImageIcon(image);
+        }
+        System.err.println("Resource not found: /asset/" + fileName);
+        return new ImageIcon();
     }
 
-    // Initializes finish line
     private void initFinishLine() {
         ImageIcon finishIcon = loadScaledIcon("FINISH.png", 670, 171, Image.SCALE_SMOOTH);
         finishLineLabel = new JLabel(finishIcon);
@@ -335,7 +315,6 @@ public class CarGUI {
         layeredPane.add(finishLineLabel, Integer.valueOf(3));
     }
 
-    // Returns X coordinates
     private int[] getLaneX() {
         return new int[]{
                 trackLabel.getX() + 68,
@@ -345,7 +324,6 @@ public class CarGUI {
         };
     }
 
-    // Initializes obstacle car
     private void initObstaclePool() {
         for (int i = 0; i < POOL_SIZE; i++) {
             ObstacleCar obs = new ObstacleCar("ENEMY_CAR.png", 8, this);
@@ -354,7 +332,6 @@ public class CarGUI {
         }
     }
 
-    // Initializes coin pool
     private void initCoinPool() {
         for (int i = 0; i < COIN_POOL_SIZE; i++) {
             Coin coin = new Coin("COIN.png", 8, this);
@@ -363,7 +340,6 @@ public class CarGUI {
         }
     }
 
-    // Retrieves inactive obstacle car from pool
     private ObstacleCar getAvailableObstacle() {
         for (ObstacleCar obs : obstaclePool) {
             if (!obs.isActive()) return obs;
@@ -371,7 +347,6 @@ public class CarGUI {
         return null;
     }
 
-    // Retrieves inactive coin from pool
     private Coin getAvailableCoin() {
         for (Coin c : coinPool) {
             if (!c.isActive()) return c;
@@ -379,22 +354,18 @@ public class CarGUI {
         return null;
     }
 
-    // Initializes main game loop
     private void initMasterGameLoop() {
         gameLoopTimer = new Timer(GAME_TICK_MS, e -> {
             if (isGameOver || isWin) return;
 
             tickCount++;
-
             trackLabel.updateScroll();
-
             updatePlayerPosition();
 
             for (ObstacleCar obs : obstaclePool) {
                 obs.updatePosition();
             }
             policeCar.updatePosition();
-
             for (Coin c : coinPool) {
                 c.updatePosition();
             }
@@ -438,6 +409,7 @@ public class CarGUI {
 
                 Rectangle carBounds = carPanel.getBounds();
                 Rectangle finishBounds = finishLineLabel.getBounds();
+
                 if (carBounds.intersects(finishBounds)) {
                     winGame();
                 }
@@ -446,7 +418,6 @@ public class CarGUI {
         gameLoopTimer.start();
     }
 
-    // Spawns hole in safe lane for level 2
     private void trySpawnHole() {
         Hole availableHole = getAvailableHole();
         if (availableHole == null) return;
@@ -467,32 +438,26 @@ public class CarGUI {
         }
     }
 
-    // Checks if lane is safe for spawning hole
     private boolean isSafeToSpawnHole(int laneX) {
         int holeX = laneX + (CAR_WIDTH - 110) / 2;
-
         for (ObstacleCar obs : obstaclePool) {
             if (obs.isActive() && obs.getX() == laneX && obs.getY() >= -CAR_HEIGHT && obs.getY() <= 350) {
                 return false;
             }
         }
-
         for (Coin c : coinPool) {
             if (c.isActive() && Math.abs(c.getX() - holeX) < 60 && c.getY() >= -120 && c.getY() <= 350) {
                 return false;
             }
         }
-
         for (Hole h : holePool) {
             if (h.isActive() && h.getX() == holeX && h.getY() >= -110 && h.getY() <= 350) {
                 return false;
             }
         }
-
         return true;
     }
 
-    // Spawns coin in safe lane
     private void trySpawnCoin() {
         Coin availableCoin = getAvailableCoin();
         if (availableCoin == null) return;
@@ -513,25 +478,22 @@ public class CarGUI {
         }
     }
 
-    // Checks if lane is safe for spawning coin
     private boolean isSafeToSpawnCoin(int laneX) {
         for (ObstacleCar obs : obstaclePool) {
             if (obs.isActive() && obs.getX() == laneX && obs.getY() >= -CAR_HEIGHT && obs.getY() <= 350) {
                 return false;
             }
         }
-
         if (policeCar.isActive() && policeCar.getX() == laneX && policeCar.getY() >= -CAR_HEIGHT && policeCar.getY() <= 350) {
             return false;
         }
-
         return true;
     }
 
-    // Spawns obstacle car in safe lane
     private void handleObstacleSpawning() {
         int[] lanesX = getLaneX();
         List<Integer> safeLanes = new ArrayList<>();
+
         for (int laneX : lanesX) {
             if (isSafeToSpawn(laneX, lanesX)) {
                 safeLanes.add(laneX);
@@ -547,7 +509,6 @@ public class CarGUI {
         }
     }
 
-    // Spawns police car in available lane
     private void trySpawnPolice() {
         int[] lanesX = getLaneX();
         List<Integer> clearLanes = new ArrayList<>();
@@ -565,7 +526,6 @@ public class CarGUI {
         }
     }
 
-    // Checks if lane is clear for police car
     private boolean isPoliceLaneClear(int laneX) {
         for (ObstacleCar obs : obstaclePool) {
             if (obs.isActive() && obs.getX() == laneX) {
@@ -575,7 +535,6 @@ public class CarGUI {
         return true;
     }
 
-    // Increments game score up to 100000 and triggers police spawn every 10000 pts
     public void addScore(int points) {
         if (isGameOver || isWin) return;
 
@@ -595,7 +554,6 @@ public class CarGUI {
         }
     }
 
-    // Checks if top lane area is clear for finish line
     private boolean isFinishLineAreaClear() {
         for (ObstacleCar obs : obstaclePool) {
             if (obs.isActive() && obs.getY() >= -CAR_HEIGHT && obs.getY() <= 250) {
@@ -608,7 +566,6 @@ public class CarGUI {
         return true;
     }
 
-    // Smoothly moves player car
     private void updatePlayerPosition() {
         int currentX = carPanel.getX();
         int currentY = carPanel.getY();
@@ -637,10 +594,8 @@ public class CarGUI {
         }
     }
 
-    // Checks if target lane is safe for spawning obstacle
     private boolean isSafeToSpawn(int targetLaneX, int[] allLanes) {
         int minVerticalGap = 320;
-
         for (ObstacleCar obs : obstaclePool) {
             if (obs.isActive()
                     && obs.getX() == targetLaneX
@@ -665,7 +620,6 @@ public class CarGUI {
                 }
             }
         }
-
         if (blockedLanes >= 3) return false;
 
         int playerX = carPanel.getX();
@@ -693,7 +647,6 @@ public class CarGUI {
         return true;
     }
 
-    // Checks if top area of lane is blocked
     private boolean isLaneBlockedNearTop(int laneX) {
         for (ObstacleCar obs : obstaclePool) {
             if (obs.isActive()
@@ -706,11 +659,9 @@ public class CarGUI {
         return false;
     }
 
-    // Triggers win state
     public void winGame() {
         if (isWin || isGameOver) return;
         isWin = true;
-
         if (gameLoopTimer != null) gameLoopTimer.stop();
         stopBGM();
 
@@ -727,56 +678,55 @@ public class CarGUI {
         restartBtn.setBorderPainted(false);
         restartBtn.setFocusPainted(false);
         restartBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
-
         restartBtn.addActionListener(e -> {
             stopBGM();
             new TitleGUI(fr);
         });
-
         layeredPane.add(restartBtn, Integer.valueOf(5));
+
         layeredPane.revalidate();
         layeredPane.repaint();
     }
 
-    // Triggers game over state
     public void gameOver(int smokeX, int smokeY) {
         if (isGameOver || isWin) return;
         isGameOver = true;
-
         if (gameLoopTimer != null) gameLoopTimer.stop();
         stopBGM();
 
-        ImageIcon smokeIcon = new ImageIcon("asset/EXPLOSION.gif");
+        URL smokeURL = getClass().getResource("/asset/EXPLOSION.gif");
+        ImageIcon smokeIcon = (smokeURL != null) ? new ImageIcon(smokeURL) : new ImageIcon();
         smokeLabel = new JLabel(smokeIcon);
         smokeLabel.setBounds(smokeX, smokeY, 140, 133);
         layeredPane.add(smokeLabel, Integer.valueOf(4));
 
-        gameOverLabel = new JLabel(new ImageIcon("asset/GameOver.png"));
+        URL gameOverURL = getClass().getResource("/asset/GameOver.png");
+        gameOverLabel = new JLabel((gameOverURL != null) ? new ImageIcon(gameOverURL) : new ImageIcon());
         gameOverLabel.setBounds(445, 100, 1030, 330);
         layeredPane.add(gameOverLabel, Integer.valueOf(5));
 
         createRestartButton();
+
         layeredPane.revalidate();
         layeredPane.repaint();
     }
 
-    // Creates restart button
     private void createRestartButton() {
-        Image scaledRestart = new ImageIcon("asset/Restart.png")
-                .getImage().getScaledInstance(455, 142, Image.SCALE_SMOOTH);
+        URL restartURL = getClass().getResource("/asset/Restart.png");
+        Image scaledRestart = (restartURL != null)
+                ? new ImageIcon(restartURL).getImage().getScaledInstance(455, 142, Image.SCALE_SMOOTH)
+                : null;
 
-        restartBtn = new JButton(new ImageIcon(scaledRestart));
+        restartBtn = new JButton((scaledRestart != null) ? new ImageIcon(scaledRestart) : new ImageIcon());
         restartBtn.setBounds(732, 470, 455, 142);
         restartBtn.setOpaque(false);
         restartBtn.setContentAreaFilled(false);
         restartBtn.setBorderPainted(false);
         restartBtn.setFocusPainted(false);
         restartBtn.addActionListener(e -> restartGame());
-
         layeredPane.add(restartBtn, Integer.valueOf(5));
     }
 
-    // Resets game state
     public void restartGame() {
         removeIfPresent(smokeLabel);
         removeIfPresent(gameOverLabel);
@@ -830,31 +780,26 @@ public class CarGUI {
         SwingUtilities.invokeLater(() -> layeredPane.requestFocusInWindow());
     }
 
-    // Removes UI
     private void removeIfPresent(Component component) {
         if (component != null) {
             layeredPane.remove(component);
         }
     }
 
-    // Sets target movement position
     public void moveTo(int newTargetX, int newTargetY) {
         if (isGameOver || isWin) return;
         targetX = newTargetX;
         targetY = newTargetY;
     }
 
-    // Returns whether game is over or won
     public boolean isGameOver() {
         return isGameOver || isWin;
     }
 
-    // Returns player target X position
     public int getTargetX() {
         return targetX;
     }
 
-    // Returns player target Y position
     public int getTargetY() {
         return targetY;
     }

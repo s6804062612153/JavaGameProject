@@ -1,5 +1,6 @@
 import javax.swing.*;
 import java.awt.*;
+import java.net.URL;
 
 public abstract class GameObject extends JPanel {
     protected int speed;
@@ -14,10 +15,16 @@ public abstract class GameObject extends JPanel {
         setOpaque(false);
         setDoubleBuffered(true);
 
-        Image img = new ImageIcon("asset/" + fileName).getImage().getScaledInstance(width, height, Image.SCALE_SMOOTH);
-        JLabel label = new JLabel(new ImageIcon(img));
-        label.setOpaque(false);
-        add(label, BorderLayout.CENTER);
+        // โหลดรูปภาพผ่าน Classpath URL
+        URL imgURL = getClass().getResource("/asset/" + fileName);
+        if (imgURL != null) {
+            Image img = new ImageIcon(imgURL).getImage().getScaledInstance(width, height, Image.SCALE_SMOOTH);
+            JLabel label = new JLabel(new ImageIcon(img));
+            label.setOpaque(false);
+            add(label, BorderLayout.CENTER);
+        } else {
+            System.err.println("Could not find image asset: /asset/" + fileName);
+        }
 
         reset();
     }

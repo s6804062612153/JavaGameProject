@@ -1,12 +1,12 @@
 import javax.swing.*;
 import java.awt.*;
-import java.io.File;
+import java.io.InputStream;
+import java.net.URL;
 
 public class LevelSelectGUI {
     private JFrame fr;
     private JLayeredPane layeredPane;
 
-    // Constructor for LevelSelectGUI
     public LevelSelectGUI(JFrame existingFrame) {
         if (existingFrame != null) {
             this.fr = existingFrame;
@@ -21,7 +21,6 @@ public class LevelSelectGUI {
         initGUI();
     }
 
-    // Initializes level selection components
     private void initGUI() {
         layeredPane = fr.getLayeredPane();
         layeredPane.removeAll();
@@ -61,7 +60,6 @@ public class LevelSelectGUI {
         fr.setVisible(true);
     }
 
-    // Sets transparent button styling
     private void setupButtonStyle(JButton btn) {
         btn.setOpaque(false);
         btn.setContentAreaFilled(false);
@@ -70,20 +68,24 @@ public class LevelSelectGUI {
         btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
     }
 
-    // Loads image icon from asset directory
     private ImageIcon loadScaledIcon(String fileName, int width, int height) {
-        ImageIcon icon = new ImageIcon("asset/" + fileName);
-        Image img = icon.getImage().getScaledInstance(width, height, Image.SCALE_SMOOTH);
-        return new ImageIcon(img);
+        URL url = getClass().getResource("/asset/" + fileName);
+        if (url != null) {
+            Image img = new ImageIcon(url).getImage().getScaledInstance(width, height, Image.SCALE_SMOOTH);
+            return new ImageIcon(img);
+        }
+        System.err.println("Resource not found: /asset/" + fileName);
+        return new ImageIcon();
     }
 
-    // Loads custom font from asset directory
     private Font loadCustomFont(float size) {
-        try {
-            File fontFile = new File("asset/SedgwickAveDisplay-Regular.ttf");
-            return Font.createFont(Font.TRUETYPE_FONT, fontFile).deriveFont(Font.BOLD, size);
+        try (InputStream fontStream = getClass().getResourceAsStream("/asset/SedgwickAveDisplay-Regular.ttf")) {
+            if (fontStream != null) {
+                return Font.createFont(Font.TRUETYPE_FONT, fontStream).deriveFont(Font.BOLD, size);
+            }
         } catch (Exception e) {
-            return new Font("Impact", Font.BOLD, (int) size);
+            e.printStackTrace();
         }
+        return new Font("Impact", Font.BOLD, (int) size);
     }
 }
